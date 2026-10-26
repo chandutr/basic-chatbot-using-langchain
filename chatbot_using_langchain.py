@@ -1,20 +1,30 @@
 from langchain_ollama import ChatOllama
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
-messages = [
-    SystemMessage(content="You are a friendly AI assistant. Answer the question in a helpful and concise manner.")
-]
-model_name = "llama3.2:3b"
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a friendly AI assistant. Answer questions helpfully and concisely."),
+    ("user", "{question}")
+])
+
+llm = ChatOllama(model="llama3.2:3b")
+
+parser = StrOutputParser()
+
+chain = prompt_template | llm | parser
+
+messages = []
 
 while True:
     user_input = input("You: ")
-    user_role = HumanMessage(content=user_input)
-    messages.append(user_role)
 
     if user_input.lower() in ["quit", "exit"]:
+        print("AI: Goodbye!")
         break
 
-    llm=ChatOllama(model=model_name)
-    response = llm.invoke(messages)
-    response = response.content
-    print("Assistant: " + response)
+    messages.append(("user", user_input))
+
+    response = chain.invoke({"question": user_input})
+    messages.append(("assistant", response))
+
+    print("AI:", response)
